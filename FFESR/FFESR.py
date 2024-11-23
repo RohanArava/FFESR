@@ -64,4 +64,4 @@ def train(model, train_loader, optimizer, criterion, save_path=".", epochs=10):
       print(f"Epoch: {epoch}, item: {i}, Loss: {loss.item()}")
       del hr_img, lr_img, hr_out, lr_out, loss1, loss2, loss
       gc.collect()
-    torch.save(model, os.path.join(save_path, f"model_{epoch}_{loss}.pth"))
+    torch.save(model, os.path.join(save_path, f"model_{epoch}.pth"))
