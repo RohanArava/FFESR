@@ -3,7 +3,7 @@ import gc
 import torch
 import torch.nn as nn
 from .EFE import EnhancedFeatureExtraction
-from ITSRN.code import models
+from ..ITSRN.code import models
 from .Args import args
 
 def make_coord(shape, ranges=None, flatten=True):
@@ -61,8 +61,7 @@ def train(model, train_loader, optimizer, criterion, save_path=".", epochs=10):
       loss = loss1 + loss2
       loss.backward()
       optimizer.step()
-      if i % 100 == 0:
-        print(f"Epoch: {epoch}, Loss: {loss.item()}")
+      print(f"Epoch: {epoch}, item: {i}, Loss: {loss.item()}")
       del hr_img, lr_img, hr_out, lr_out, loss1, loss2, loss
       gc.collect()
     torch.save(model, os.path.join(save_path, f"model_{epoch}_{loss}.pth"))
