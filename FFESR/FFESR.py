@@ -40,6 +40,7 @@ class FFESR(nn.Module):
         self.itsrn = models.make(args.model)
 
     def forward(self, x, size):
+        print(size)
         x = self.enhanced_feature_extraction(x)
         coord = make_coord(size).cuda()
         scale = torch.ones_like(coord)
@@ -47,6 +48,8 @@ class FFESR(nn.Module):
         scale[:, 1] *= 1 / size[1]
         y = self.itsrn(x, coord.unsqueeze(0), scale.unsqueeze(0)).view(1, 3, size[0], size[1])
         z = self.output_conv(x)
+        del coord, scale
+        gc.collect()
         return y, z
     
 def train(model, train_loader, optimizer, criterion, save_path=".", epochs=10):
@@ -55,6 +58,7 @@ def train(model, train_loader, optimizer, criterion, save_path=".", epochs=10):
       hr_img = hr_img.cuda()
       lr_img = lr_img.cuda()
       optimizer.zero_grad()
+      
       hr_out, lr_out = model(lr_img, hr_img.shape[2:])
       loss1 = criterion(hr_out, hr_img)
       loss2 = criterion(lr_out, lr_img)
