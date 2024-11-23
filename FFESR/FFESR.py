@@ -55,17 +55,22 @@ class FFESR(nn.Module):
 def train(model, train_loader, optimizer, criterion, save_path=".", epochs=10):
   for epoch in range(epochs):
     for i, (hr_img, lr_img) in enumerate(train_loader):
-      hr_img = hr_img.cuda()
-      lr_img = lr_img.cuda()
-      optimizer.zero_grad()
-      
-      hr_out, lr_out = model(lr_img, hr_img.shape[2:])
-      loss1 = criterion(hr_out, hr_img)
-      loss2 = criterion(lr_out, lr_img)
-      loss = loss1 + loss2
-      loss.backward()
-      optimizer.step()
-      print(f"Epoch: {epoch}, item: {i}, Loss: {loss.item()}")
-      del hr_img, lr_img, hr_out, lr_out, loss1, loss2, loss
-      gc.collect()
+      try:
+        hr_img = hr_img.cuda()
+        lr_img = lr_img.cuda()
+        optimizer.zero_grad()
+
+        hr_out, lr_out = model(lr_img, hr_img.shape[2:])
+        loss1 = criterion(hr_out, hr_img)
+        loss2 = criterion(lr_out, lr_img)
+        loss = loss1 + loss2
+        loss.backward()
+        optimizer.step()
+        print(f"Epoch: {epoch}, item: {i}, Loss: {loss.item()}")
+        del hr_img, lr_img, hr_out, lr_out, loss1, loss2, loss
+      except Exception as e:
+        print(e)
+      finally:
+        gc.collect()
+
     torch.save(model, os.path.join(save_path, f"model_{epoch}.pth"))
