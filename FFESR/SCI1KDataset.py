@@ -11,5 +11,5 @@ class SCI1KDataset(torch.utils.data.Dataset):
       return len(self.paths)
     def __getitem__(self, idx):
       print(self.paths[idx])
-      hr_img, lr_img = get_hr_lr_images(self.paths[idx], scale=self.scale, orig_scale=0.3)
+      hr_img, lr_img = get_hr_lr_images(self.paths[idx], scale=self.scale, orig_scale=0.1)
       return hr_img, lr_img
