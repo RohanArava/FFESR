@@ -80,6 +80,8 @@ def train(model, train_loader, optimizer, criterion, save_path=".", epochs=5):
     torch.save(model, os.path.join(save_path, f"model_{epoch}.pth"))
 
 def test(model, test_loader, criterion):
+  ssim_scores = []
+  losses = []
   with torch.no_grad():
     for i, (hr_img, lr_img) in enumerate(test_loader):
       try:
@@ -90,10 +92,16 @@ def test(model, test_loader, criterion):
         loss1 = criterion(hr_out, hr_img)
         loss2 = criterion(lr_out, lr_img)
         loss = loss1 + loss2
-        print(f"Test item: {i}, Loss: {loss.item()}")
-        print(f"SSIM score: {structural_sim(hr_out, hr_img)}")
+        loss_item = loss.item()
+        losses.append(loss_item)
+        ssim = structural_sim(hr_out, hr_img)
+        ssim_scores.append(ssim)
+        print(f"Test item: {i}, Loss: {loss_item}")
+        print(f"SSIM score: {ssim}")
         del hr_img, lr_img, hr_out, lr_out, loss1, loss2, loss
       except Exception as e:
         ...
       finally:
         gc.collect()
+  print(f"Average SSIM score: {sum(ssim_scores)/len(ssim_scores)}")
+  print(f"Average loss: {sum(losses)/len(losses)}")
