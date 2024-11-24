@@ -53,7 +53,7 @@ class FFESR(nn.Module):
         gc.collect()
         return y, z
     
-def train(model, train_loader, optimizer, criterion, save_path=".", epochs=10):
+def train(model, train_loader, optimizer, criterion, save_path=".", epochs=5):
   for epoch in range(epochs):
     for i, (hr_img, lr_img) in enumerate(train_loader):
       try:
