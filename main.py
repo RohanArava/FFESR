@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import gc
-from FFESR.FFESR import FFESR, train
+from FFESR.FFESR import FFESR, train, test
 from FFESR.SCI1KDataset import SCI1KDataset
 from FFESR.Args import args
 
@@ -15,7 +15,9 @@ model = FFESR(
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 criterion = nn.L1Loss()
 train_loader = torch.utils.data.DataLoader(SCI1KDataset(args.path), batch_size=1, shuffle=True)
+test_loader = torch.utils.data.DataLoader(SCI1KDataset(args.test_path), batch_size=1, shuffle=True)
 train(model, train_loader, optimizer, criterion, epochs=10)
+test(model, test_loader, criterion)
 del model, optimizer, criterion, train_loader
 gc.collect()
 

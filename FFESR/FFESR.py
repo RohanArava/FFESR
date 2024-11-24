@@ -5,6 +5,7 @@ import torch.nn as nn
 from .EFE import EnhancedFeatureExtraction
 from ..ITSRN.code import models
 from .Args import args
+from .Utils import structural_sim, hr_to_lr
 
 def make_coord(shape, ranges=None, flatten=True):
     """
@@ -56,6 +57,8 @@ def train(model, train_loader, optimizer, criterion, save_path=".", epochs=10):
   for epoch in range(epochs):
     for i, (hr_img, lr_img) in enumerate(train_loader):
       try:
+        if i % 100 == 0:
+            print(f"Epoch: {epoch}, item: {i}")
         hr_img = hr_img.cuda()
         lr_img = lr_img.cuda()
         optimizer.zero_grad()
@@ -66,11 +69,30 @@ def train(model, train_loader, optimizer, criterion, save_path=".", epochs=10):
         loss = loss1 + loss2
         loss.backward()
         optimizer.step()
-        print(f"Epoch: {epoch}, item: {i}, Loss: {loss.item()}")
+        
         del hr_img, lr_img, hr_out, lr_out, loss1, loss2, loss
       except Exception as e:
-        print(e)
+        ...
       finally:
         gc.collect()
-
+    print("Saving model. Epoch:", epoch)
     torch.save(model, os.path.join(save_path, f"model_{epoch}.pth"))
+
+def test(model, test_loader, criterion):
+  with torch.no_grad():
+    for i, (hr_img, lr_img) in enumerate(test_loader):
+      try:
+        hr_img = hr_img.cuda()
+        lr_img = lr_img.cuda()
+        model = lambda x, y: x, hr_to_lr(x, scale=y)
+        hr_out, lr_out = model(hr_img, lr_img.shape[2]/hr_img.shape[2])
+        loss1 = criterion(hr_out, hr_img)
+        loss2 = criterion(lr_out, lr_img)
+        loss = loss1 + loss2
+        print(f"Test item: {i}, Loss: {loss.item()}")
+        print(f"SSIM score: {structural_sim(hr_out, hr_img)}")
+        del hr_img, lr_img, hr_out, lr_out, loss1, loss2, loss
+      except Exception as e:
+        ...
+      finally:
+        gc.collect()
