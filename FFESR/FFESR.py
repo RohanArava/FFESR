@@ -59,17 +59,16 @@ def train(model, train_loader, optimizer, criterion, save_path=".", epochs=5):
       try:
         if i % 100 == 0:
             print(f"Epoch: {epoch}, item: {i}")
-        hr_img = hr_img.cuda()
-        lr_img = lr_img.cuda()
-        optimizer.zero_grad()
-
+        hr_img = hr_img
+        lr_img = lr_img
+        # optimizer.zero_grad()
         model = lambda x, y: x, hr_to_lr(x, scale=y)
         hr_out, lr_out = model(hr_img, lr_img.shape[2]/hr_img.shape[2])
         loss1 = criterion(hr_out, hr_img)
         loss2 = criterion(lr_out, lr_img)
         loss = loss1 + loss2
-        loss.backward()
-        optimizer.step()
+        # loss.backward()
+        # optimizer.step()
         
         del hr_img, lr_img, hr_out, lr_out, loss1, loss2, loss
       except Exception as e:
@@ -85,8 +84,8 @@ def test(model, test_loader, criterion):
   with torch.no_grad():
     for i, (hr_img, lr_img) in enumerate(test_loader):
       try:
-        hr_img = hr_img.cuda()
-        lr_img = lr_img.cuda()
+        hr_img = hr_img
+        lr_img = lr_img
         model = lambda x, y: x, hr_to_lr(x, scale=y)
         hr_out, lr_out = model(hr_img, lr_img.shape[2]/hr_img.shape[2])
         loss1 = criterion(hr_out, hr_img)
