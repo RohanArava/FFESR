@@ -63,7 +63,8 @@ def train(model, train_loader, optimizer, criterion, save_path=".", epochs=10):
         lr_img = lr_img.cuda()
         optimizer.zero_grad()
 
-        hr_out, lr_out = model(lr_img, hr_img.shape[2:])
+        model = lambda x, y: x, hr_to_lr(x, scale=y)
+        hr_out, lr_out = model(hr_img, lr_img.shape[2]/hr_img.shape[2])
         loss1 = criterion(hr_out, hr_img)
         loss2 = criterion(lr_out, lr_img)
         loss = loss1 + loss2
