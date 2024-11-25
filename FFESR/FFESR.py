@@ -84,10 +84,11 @@ def test(model, test_loader, criterion):
   with torch.no_grad():
     for i, (hr_img, lr_img) in enumerate(test_loader):
       try:
+        print(f"Item: {i}")
         hr_img = hr_img
         lr_img = lr_img
-        model = lambda x, y: x, hr_to_lr(x, scale=y)
-        hr_out, lr_out = model(hr_img, lr_img.shape[2]/hr_img.shape[2])
+        model = lambda x, y: (x, hr_to_lr(x, y))
+        hr_out, lr_out = model(hr_img, lr_img.shape)
         loss1 = criterion(hr_out, hr_img)
         loss2 = criterion(lr_out, lr_img)
         loss = loss1 + loss2
@@ -95,7 +96,7 @@ def test(model, test_loader, criterion):
         losses.append(loss_item)
         ssim = structural_sim(hr_out, hr_img)
         ssim_scores.append(ssim)
-        print(f"Test item: {i}, Loss: {loss_item}")
+        print(f"Loss: {loss_item}")
         print(f"SSIM score: {ssim}")
         del hr_img, lr_img, hr_out, lr_out, loss1, loss2, loss
       except Exception as e:
