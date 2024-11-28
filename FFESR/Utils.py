@@ -19,5 +19,5 @@ from skimage.metrics import structural_similarity
 
 #Needs images to be same dimensions
 def structural_sim(img1, img2):
-  sim, diff = random.uniform(0.85, 0.95), 0 if img1.shape == img2.shape else structural_similarity(img1, img2, full=True)
+  sim = structural_similarity(img1, img2, channel_axis=2, data_range=255.0, multichannel=True)
   return sim

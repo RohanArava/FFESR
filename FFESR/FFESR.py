@@ -2,8 +2,9 @@ import os
 import gc
 import torch
 import torch.nn as nn
+import numpy as np
 from .EFE import EnhancedFeatureExtraction
-from ..ITSRN.code import models
+from ITSRN.code import models
 from .Args import args
 from .Utils import structural_sim, hr_to_lr
 
@@ -41,7 +42,6 @@ class FFESR(nn.Module):
         self.itsrn = models.make(args.model)
 
     def forward(self, x, size):
-        print(size)
         x = self.enhanced_feature_extraction(x)
         coord = make_coord(size).cuda()
         scale = torch.ones_like(coord)
@@ -54,29 +54,30 @@ class FFESR(nn.Module):
         return y, z
     
 def train(model, train_loader, optimizer, criterion, save_path=".", epochs=5):
+  losses = []
   for epoch in range(epochs):
     for i, (hr_img, lr_img) in enumerate(train_loader):
       try:
         if i % 100 == 0:
             print(f"Epoch: {epoch}, item: {i}")
-        hr_img = hr_img
-        lr_img = lr_img
-        # optimizer.zero_grad()
-        model = lambda x, y: x, hr_to_lr(x, scale=y)
-        hr_out, lr_out = model(hr_img, lr_img.shape[2]/hr_img.shape[2])
+        hr_img = hr_img.cuda()
+        lr_img = lr_img.cuda()
+        optimizer.zero_grad()
+        hr_out, lr_out = model(lr_img, hr_img.shape[2:])
         loss1 = criterion(hr_out, hr_img)
         loss2 = criterion(lr_out, lr_img)
         loss = loss1 + loss2
-        # loss.backward()
-        # optimizer.step()
-        
+        loss.backward()
+        optimizer.step()
+        losses.append(loss.item())
+        print(f"Loss: {loss.item()}")
         del hr_img, lr_img, hr_out, lr_out, loss1, loss2, loss
       except Exception as e:
-        ...
+        print(e)
       finally:
         gc.collect()
     print("Saving model. Epoch:", epoch)
-    torch.save(model, os.path.join(save_path, f"model_{epoch}.pth"))
+    torch.save(model, os.path.join(save_path, f"model_{epoch}_{np.mean(losses)}.pth"))
 
 def test(model, test_loader, criterion):
   ssim_scores = []
@@ -85,23 +86,24 @@ def test(model, test_loader, criterion):
     for i, (hr_img, lr_img) in enumerate(test_loader):
       try:
         print(f"Item: {i}")
-        hr_img = hr_img
-        lr_img = lr_img
-        model = lambda x, y: (x, hr_to_lr(x, y))
-        hr_out, lr_out = model(hr_img, lr_img.shape)
+        hr_img = hr_img.cuda()
+        lr_img = lr_img.cuda()
+        hr_out, lr_out = model(lr_img, hr_img.shape[2:])
         loss1 = criterion(hr_out, hr_img)
         loss2 = criterion(lr_out, lr_img)
         loss = loss1 + loss2
         loss_item = loss.item()
         losses.append(loss_item)
-        ssim = structural_sim(hr_out, hr_img)
+        ssim = structural_sim(hr_out.cpu()[0].permute(1, 2, 0).detach().numpy(), hr_img.cpu()[0].permute(1, 2, 0).detach().numpy())
         ssim_scores.append(ssim)
         print(f"Loss: {loss_item}")
         print(f"SSIM score: {ssim}")
         del hr_img, lr_img, hr_out, lr_out, loss1, loss2, loss
       except Exception as e:
-        ...
+        print(e)
       finally:
         gc.collect()
-  print(f"Average SSIM score: {sum(ssim_scores)/len(ssim_scores)}")
+  avg_ssim = sum(ssim_scores)/len(ssim_scores)
+  print(f"Average SSIM score: {avg_ssim}")
   print(f"Average loss: {sum(losses)/len(losses)}")
+  return avg_ssim
